@@ -1,51 +1,7 @@
 use clap::{Parser, arg, command};
 use image::{DynamicImage, GenericImage, GenericImageView, ImageReader, Rgba};
-use std::{collections::BTreeMap, fmt::Error, ops::Add};
 
-fn dijkstra<V, W, I, F>(start: V, end: V, get_edges: F) -> Result<Vec<V>, Error>
-where
-    V: Clone + Ord,
-    W: Add<Output = W> + Ord + Copy + Default,
-    I: Iterator<Item = (V, W)>,
-    F: Fn(&V) -> I,
-{
-    let mut distances = BTreeMap::new();
-    let mut unvisited = Vec::new();
-    let mut shortest_connections: BTreeMap<V, V> = BTreeMap::new();
-
-    distances.insert(start.clone(), W::default());
-    unvisited.push(start.clone());
-
-    while let Some(current_node) = unvisited.pop() {
-        if current_node == end {
-            let mut ret = Vec::new();
-            let mut c = current_node.clone();
-            while let Some(n) = shortest_connections.get(&c) {
-                ret.push(n.clone());
-                c = n.clone();
-            }
-            ret.reverse();
-            return Ok(ret);
-        }
-        let node_distance = distances[&current_node];
-
-        get_edges(&current_node).for_each(|(vertex, weight)| {
-            if let Some(dist) = distances.get(&vertex) {
-                if *dist > node_distance + weight {
-                    distances.insert(vertex.clone(), node_distance + weight);
-                    shortest_connections.insert(vertex.clone(), current_node.clone());
-                }
-            } else {
-                shortest_connections.insert(vertex.clone(), current_node.clone());
-                distances.insert(vertex.clone(), node_distance + weight);
-                unvisited.push(vertex.clone());
-            }
-        });
-        // Sorting every iteration shouldn't be too inefficient because the vec is always mostly sorted
-        unvisited.sort_by(|a, b| distances[a].cmp(&distances[b]));
-    }
-    return Err(Error);
-}
+mod pathfinding;
 
 #[derive(Parser)]
 #[command(version = "1.0.0")]
@@ -93,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let end_vertex = Point { x: end.0, y: end.1 };
 
-    let get_edges = |vertex: &Point| {
+    let get_weighted_edges = |vertex: &Point| {
         let mut res = Vec::new();
 
         for (x, y) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
@@ -117,7 +73,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         res.into_iter()
     };
 
-    let res = Vec::from_iter(dijkstra(start_vertex, end_vertex, get_edges).unwrap());
+    let get_edges = |vertex: &Point| get_weighted_edges(vertex).map(|(v, _)| v);
+
+    let res = Vec::from_iter(pathfinding::dijkstra(start_vertex, end_vertex, get_weighted_edges).unwrap());
+    let res = Vec::from_iter(pathfinding::depth_first_search(start_vertex, end_vertex, get_edges).unwrap());
 
     let mut out_image = img.clone();
 
