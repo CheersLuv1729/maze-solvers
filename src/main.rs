@@ -75,7 +75,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let get_edges = |vertex: &Point| get_weighted_edges(vertex).map(|(v, _)| v);
 
-    let res = Vec::from_iter(pathfinding::dijkstra(start_vertex, end_vertex, get_weighted_edges).unwrap());
+    // let res = Vec::from_iter(pathfinding::dijkstra(start_vertex, end_vertex, get_weighted_edges).unwrap());
     let res = Vec::from_iter(pathfinding::depth_first_search(start_vertex, end_vertex, get_edges).unwrap());
 
     let mut out_image = img.clone();

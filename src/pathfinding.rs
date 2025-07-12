@@ -1,5 +1,18 @@
 use std::{collections::{BTreeMap, BTreeSet}, fmt::Error, ops::Add};
 
+fn get_path_from_connections<V>(end: V, connections: &BTreeMap<V, V>) -> Result<Vec<V>, Error>
+where V: Clone + Ord
+{
+    let mut ret = Vec::new();
+    let mut c = end.clone();
+    while let Some(n) = connections.get(&c) {
+        ret.push(n.clone());
+        c = n.clone();
+    }
+    ret.reverse();
+    return Ok(ret);
+}
+
 pub fn depth_first_search<V, I, F>(start: V, end: V, get_edges: F) -> Result<Vec<V>, Error>
 where
     V: Clone + Ord,
@@ -13,14 +26,7 @@ where
     while let Some(current_node) = stack.pop()
     {
         if current_node == end {
-            let mut ret = Vec::new();
-            let mut c = current_node.clone();
-            while let Some(n) = connections.get(&c) {
-                ret.push(n.clone());
-                c = n.clone();
-            }
-            ret.reverse();
-            return Ok(ret);
+            return get_path_from_connections(end, &connections);
         }
         if visited.insert(current_node.clone())
         {
@@ -50,14 +56,7 @@ where
 
     while let Some(current_node) = unvisited.pop() {
         if current_node == end {
-            let mut ret = Vec::new();
-            let mut c = current_node.clone();
-            while let Some(n) = shortest_connections.get(&c) {
-                ret.push(n.clone());
-                c = n.clone();
-            }
-            ret.reverse();
-            return Ok(ret);
+            return get_path_from_connections(end, &shortest_connections);
         }
         let node_distance = distances[&current_node];
 
